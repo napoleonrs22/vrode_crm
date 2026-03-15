@@ -1,0 +1,26 @@
+services:
+
+  db:
+    image: postgres:14-alpine
+    env_file:
+      - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    command: >
+      sh -c " echo 'Waiting for postgres...' && while ! nc -z db 5432; do sleep 1; done && echo 'Postgres started' && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 "
+
+volumes:
+  pg_data:
