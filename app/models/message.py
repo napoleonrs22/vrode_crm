@@ -16,4 +16,4 @@ class Message(Base, TimestampMixin):
 
     text: Mapped[str] = mapped_column(Text)
 
-    lead = relationship("Lead", back_populates="messages")
+    lead = relationship("Lead")

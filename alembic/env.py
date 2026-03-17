@@ -15,11 +15,9 @@ sys.path.append(os.getcwd())
 from app.models.models_base import Base
 from app.config import settings
 
+from app.models.models_comment import Comment
 from app.models.models_user import User
 from app.models.models_lead import Lead
-from app.models.models_deals import Deal
-from app.models.models_activity import Activity
-from app.models.message import Message
 
 
 config = context.config

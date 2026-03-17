@@ -16,4 +16,4 @@ class Deal(Base, TimestampMixin):
 
     status: Mapped[str] = mapped_column(String(50), default="open")
 
-    lead = relationship("Lead", back_populates="deals")
+    lead = relationship("Lead")

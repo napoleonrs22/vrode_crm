@@ -1,21 +1,20 @@
-# это пока затычка
-
-
+import asyncio
 import requests
 
-
-BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-
-CHAT_ID = "YOUR_CHAT_ID"
+from app.config import settings
 
 
-def send_notification(text: str):
+def _send_notification_sync(text: str) -> None:
+    if not settings.TELEGRAM_BOT_TOKEN or not settings.TELEGRAM_CHAT_ID:
+        return
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
-        "chat_id": CHAT_ID,
-        "text": text
+        "chat_id": settings.TELEGRAM_CHAT_ID,
+        "text": text,
     }
+    requests.post(url, json=payload, timeout=10)
 
-    requests.post(url, json=payload)
+
+async def send_notification(text: str) -> None:
+    await asyncio.to_thread(_send_notification_sync, text)
