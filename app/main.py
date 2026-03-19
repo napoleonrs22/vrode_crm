@@ -19,6 +19,7 @@ async def on_startup():
 
 
 app.include_router(auth_router.router)
+app.include_router(lead_router.public_router)
 app.include_router(lead_router.router)
 app.include_router(comment_router.router)
 

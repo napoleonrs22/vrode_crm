@@ -6,6 +6,5 @@ alembic
 pydantic-settings
 python-dotenv
 pydantic[email]
-requests
 python-jose[cryptography]
 passlib[bcrypt]

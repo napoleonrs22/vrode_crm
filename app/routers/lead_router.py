@@ -1,12 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import get_current_user
 from app.database import get_db
 from app.models.models_lead import LeadStatus
-from app.schemas.lead import LeadCreate, LeadResponse, LeadUpdate
+from app.schemas.lead import (
+    LeadBoardResponse,
+    LeadCreate,
+    LeadResponse,
+    LeadStatusUpdate,
+    LeadUpdate,
+)
 from app.service.lead_service import LeadService
 
+public_router = APIRouter(prefix="/public/leads", tags=["Public Leads"])
+
+
+@public_router.post("", response_model=LeadResponse)
+async def create_lead_public(
+    data: LeadCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await service.create_lead(db, data.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+        
 
 router = APIRouter(
     prefix="/leads",
@@ -16,9 +35,6 @@ router = APIRouter(
 service = LeadService()
 
 
-@router.post("", response_model=LeadResponse)
-async def create_lead(data: LeadCreate, db: AsyncSession = Depends(get_db)):
-    return await service.create_lead(db, data.model_dump())
 
 
 @router.get("", response_model=list[LeadResponse])
@@ -37,6 +53,17 @@ async def get_leads(
     return items
 
 
+@router.get("/board", response_model=LeadBoardResponse)
+async def get_leads_board(
+    limit: int = 1000,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    kanban поставишь
+    """
+    return await service.get_board(db, limit=limit)
+
+
 @router.get("/{lead_id}", response_model=LeadResponse)
 async def get_lead(
     lead_id: int,
@@ -49,17 +76,44 @@ async def get_lead(
     return lead
 
 
+@router.patch("/{lead_id}/status", response_model=LeadResponse)
+async def update_lead_status(
+    lead_id: int,
+    data: LeadStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    тоже в kanban
+    """
+    lead = await service.update_lead_status(
+        db,
+        lead_id,
+        status=data.status,
+    )
+
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return lead
+
+
 @router.patch("/{lead_id}", response_model=LeadResponse)
 async def update_lead(
     lead_id: int,
     data: LeadUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    lead = await service.update_lead(
-        db,
-        lead_id,
-        data.model_dump(exclude_none=True),
-    )
+    try:
+        lead = await service.update_lead(
+            db,
+            lead_id,
+            data.model_dump(exclude_none=True),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
