@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.database import AsyncSessionLocal
 from app.routers import auth_router, comment_router, lead_router
 from app.service.auth_service import AuthService
@@ -11,6 +12,13 @@ app = FastAPI(
 
 auth_service = AuthService()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешить временно ВСЁ
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def on_startup():
