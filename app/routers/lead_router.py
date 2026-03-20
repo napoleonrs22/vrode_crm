@@ -14,6 +14,7 @@ from app.schemas.lead import (
 from app.service.lead_service import LeadService
 
 public_router = APIRouter(prefix="/public/leads", tags=["Public Leads"])
+service = LeadService()
 
 
 @public_router.post("", response_model=LeadResponse)
@@ -25,14 +26,37 @@ async def create_lead_public(
         return await service.create_lead(db, data.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-        
+
+
+@public_router.get("/board", response_model=LeadBoardResponse)
+async def get_leads_board_public(
+    limit: int = 1000,
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.get_board(db, limit=limit)
+
+
+@public_router.patch("/{lead_id}/status", response_model=LeadResponse)
+async def update_lead_status_public(
+    lead_id: int,
+    data: LeadStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    lead = await service.update_lead_status(
+        db,
+        lead_id,
+        status=data.status,
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return lead
 
 router = APIRouter(
     prefix="/leads",
     tags=["Leads"],
     dependencies=[Depends(get_current_user)],
 )
-service = LeadService()
 
 
 
