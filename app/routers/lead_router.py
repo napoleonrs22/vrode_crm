@@ -52,6 +52,59 @@ async def update_lead_status_public(
 
     return lead
 
+
+@public_router.delete("/delete/{lead_id}")
+async def delete_lead_public(
+    lead_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Явный путь, чтобы не пересекаться с PATCH /{lead_id}."""
+    success = await service.delete_lead(db, lead_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return {"message": "Lead deleted"}
+
+
+@public_router.post("/delete/{lead_id}")
+async def delete_lead_public_post(
+    lead_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Альтернатива DELETE: прокси/CDN иногда отдают 405 на DELETE.
+    """
+    success = await service.delete_lead(db, lead_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return {"message": "Lead deleted"}
+
+
+@public_router.patch("/{lead_id}", response_model=LeadResponse)
+async def update_lead_public(
+    lead_id: int,
+    data: LeadUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        lead = await service.update_lead(
+            db,
+            lead_id,
+            data.model_dump(exclude_none=True),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return lead
+
+
 router = APIRouter(
     prefix="/leads",
     tags=["Leads"],
